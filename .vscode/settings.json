@@ -1,0 +1,13 @@
+{
+    "checkstyle.configuration": "${workspaceFolder}/checkstyle.xml",
+    "checkstyle.enable": true,
+    "checkstyle.run": "onType",
+
+    "java.compile.nullAnalysis.mode": "automatic",
+
+    "editor.defaultFormatter": "wx-chevalier.google-java-format",
+
+    "[java]": {
+        "editor.formatOnSave": true
+    }
+}
