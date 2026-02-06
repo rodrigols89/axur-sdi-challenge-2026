@@ -1212,6 +1212,617 @@ Tudo que está aqui:
      - O VSCode formata automaticamente o código
    - *📌 Garante código sempre padronizado, sem esforço manual.*
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+---
+
+<div id="define-state"></div>
+
+## `Definindo o estado principal do algoritmo (HTMLParserState.java)`
+
+> **🧠 Todo algoritmo que analisa algo “passo a passo” precisa de memória.**  
+> Essa memória é chamada de `estado (state)`.
+
+No nosso desafio, o programa lê o HTML **linha por linha** e precisa saber, a cada instante:
+
+ - Quais tags estão abertas;
+ - Quão profundo ele está dentro do HTML
+
+Para isso, vamos definir **dois elementos centrais de estado**:
+
+ - Pilha de tags;
+ - Profundidade atual.
+
+> **NOTE:**  
+> Sem isso, é impossível saber **qual texto está mais profundo**.
+
+### `O que é “estado (state)”, em termos simples?`
+
+Imagine que você está lendo um livro e vai anotando:
+
+ - Quantos parênteses você abriu;
+ - Quais ainda não foram fechados.
+
+O HTML funciona da mesma forma.
+
+ - Cada `<div>` abre um nível.
+ - Cada `</div>` fecha um nível.
+
+O estado guarda essa informação **enquanto o texto é lido**.
+
+### `Exemplo visual: HTML como camadas`
+
+**HTML:**
+```html
+<body>
+    <div>
+        <p>Texto A</p>
+    </div>
+</body>
+```
+
+**Visualmente, isso vira:**
+```html
+<body>               ← profundidade 1
+    <div>            ← profundidade 2
+        <p>          ← profundidade 3
+            Texto A
+        </p>
+    </div>
+</body>
+```
+
+> **NOTE:**  
+> - 📌 Quando o texto `"Texto A"` é encontrado, a profundidade atual é **3**.  
+> - É exatamente esse número que queremos acompanhar.
+
+### `Como representamos isso no código?`
+
+> **Para representar isso em código nós utilizamos a estrutura de dados: `pilha (stack)`.**
+
+A pilha representa:
+
+ - Tags abertas;
+ - Ordem correta de fechamento
+
+**Funcionamento mental:**
+```html
+Abriu <div>   → empilha "div"
+Abriu <p>     → empilha "p"
+Fechou </p>   → desempilha "p"
+Fechou </div> → desempilha "div"
+```
+
+> **NOTE:**  
+> 📌 Se tentar fechar algo que não está no topo da pilha, o HTML é **malformado**.
+
+### `Estado do Parser HTML (HTMLParserState)`
+
+> Antes de um parser HTML conseguir *validar* ou in*terpretar um documento, ele precisa **saber em que ponto (estado) da estrutura ele está**.
+
+Em HTML, as tags se comportam como uma **pilha**:
+
+```html
+<div>
+    <span>
+        <p>
+```
+
+ - `<div>` abre
+ - depois `<span>`
+ - depois `<p>`
+
+Para fechar corretamente, a **última tag aberta deve ser a primeira a fechar**:
+
+```html
+</p>
+</span>
+</div>
+```
+
+> **NOTE:**  
+> 📌 Esse comportamento é exatamente o conceito de **Stack (Pilha)**.
+
+A classe `HTMLParserState` existe para:
+
+ - Armazenar as tags abertas;
+ - Controlar a **profundidade atual**;
+ - Saber se ainda existem tags abertas;
+ - Permitir abrir e fechar tags de forma segura.
+
+Vamos começar adicionando os imports necessários para isso:
+
+[HTMLParserState.java](app/src/main/java/org/example/HTMLParserState.java)
+```java
+package org.example;
+
+import java.util.ArrayDeque;
+import java.util.Deque;
+```
+
+ - `package org.example;`
+   - Define o **namespace** da classe;
+   - Organiza o código em módulos;
+   - Evita conflitos de nomes entre classes.
+ - `import java.util.ArrayDeque;`
+   - É uma implementação concreta de Deque;
+   - Usa um array interno;
+   - É:
+     - rápida;
+     - eficiente
+     - recomendada pelo Java no lugar da antiga Stack
+   - *📌 Por isso usamos Deque como tipo e ArrayDeque como implementação.*
+ - `import java.util.Deque;`
+   - É uma interface do Java
+   - Representa uma fila dupla (Double-Ended Queue)
+   - Permite inserir e remover elementos:
+     - Do início;
+     - Ou do final.
+   - 📌 Quando usada como pilha (stack), ela trabalha em padrão LIFO:
+     - *Last In, First Out (Último a entrar, primeiro a sair)*
+
+Agora, nós vamos definir nossa classe `HTMLParserState`:
+
+[HTMLParserState.java](app/src/main/java/org/example/HTMLParserState.java)
+```java
+package org.example;
+
+import java.util.ArrayDeque;
+import java.util.Deque;
+
+public final class HTMLParserState {
+
+  ...
+
+}
+```
+
+Agora, nós vamos criar um Array (Deque) de strings que vai armazenar as tags abertas:
+
+[HTMLParserState.java](app/src/main/java/org/example/HTMLParserState.java)
+```java
+public final class HTMLParserState {
+
+    private final Deque<String> openTagsArray;
+
+}
+```
+
+ - `openTagsArray`
+   - Armazena as **tags HTML abertas**
+   - Cada `String` representa o nome de uma tag (`div`, `span`, etc.)
+ - `Por que Deque<String>?`
+   - Porque precisamos de:
+     - `push()` → abrir tag
+     - `pop()` → fechar tag
+     - *Exatamente o comportamento de uma pilha (stack)*
+
+Continuando, agora nós vamos criar um construtor para inicializar a pilha:
+
+[HTMLParserState.java](app/src/main/java/org/example/HTMLParserState.java)
+```java
+public final class HTMLParserState {
+
+    private final Deque<String> openTagsArray;
+
+    public HTMLParserState() {
+        this.openTagsArray = new ArrayDeque<>();
+    }
+}
+```
+
+ - `this.openTagsArray = new ArrayDeque<>();`
+   - O que `new ArrayDeque<>()` faz?
+     - Cria uma pilha vazia;
+     - Pronta para armazenar as tags abertas.
+
+Agora, nós vamos criar uma função chamada `openTag()` que vai pegar o nosso array `openTagsArray` e adicionar uma nova tag na pilha utilizando o método `push()` da interface `Deque`:
+
+[HTMLParserState.java](app/src/main/java/org/example/HTMLParserState.java)
+```java
+public final class HTMLParserState {
+
+    ...
+
+    public void openTag(final String tagName) {
+        this.openTagsArray.push(tagName);
+    }
+}
+```
+
+ - `final String tagName`
+   - Nome da tag HTML (`div`, `p`, `span`)
+   - `final` impede alteração do valor dentro do método
+ - `push()`
+   - Insere o elemento **no topo da pilha**
+
+**Exemplo prático:**
+```bash
+openTag("div")
+openTag("span")
+
+Pilha:
+[topo] span
+        div
+```
+
+Continuando, agora nós vamos criar uma função chamada `closeTag()` que vai pegar o nosso array `openTagsArray` e remover uma nova tag da pilha utilizando o método `pop()` da interface `Deque`:
+
+[HTMLParserState.java](app/src/main/java/org/example/HTMLParserState.java)
+```java
+public final class HTMLParserState {
+
+    ...
+
+    public String closeTag() {
+        return this.openTagsArray.pop();
+    }
+}
+```
+ - `pop()`
+   - Remove o elemento do topo da pilha.
+
+**Exemplo prático:**
+```bash
+Antes:
+[topo] span
+        div
+
+closeTag() → "span"
+
+Depois:
+[topo] div
+```
+
+> ⚠️ **Importante**  
+> Se a pilha estiver vazia, `pop()` lança: `NoSuchElementException`
+
+Agora, nós vamos criar uma função que vai retornar quantas tags estamos abertas, ou seja, o nível de profundidade do HTML:
+
+[HTMLParserState.java](app/src/main/java/org/example/HTMLParserState.java)
+```java
+public final class HTMLParserState {
+
+    ...
+
+    public int getCurrentDepth() {
+        return this.openTagsArray.size();
+    }
+}
+```
+
+---
+
+ - **O que esse método faz?**
+   - Retorna **quantas tags estão abertas**;
+   - Representa a profundidade atual do HTML.
+ - `size()`
+   - Conta quantos elementos existem na coleção
+
+**Exemplo prático:**
+```bash
+<div>
+    <span>
+        <p>
+
+getCurrentDepth() → 3
+```
+
+Agora, nós vamos criar uma função que vai indicar se o parser ainda possui tags não fechadas:
+
+[HTMLParserState.java](app/src/main/java/org/example/HTMLParserState.java)
+```java
+public boolean hasopenTagsArray() {
+    return !this.openTagsArray.isEmpty();
+}
+```
+
+ - **O que esse método faz?**
+   - Indica se o parser ainda possui tags não fechadas
+ - **Função utilizada: `isEmpty()`**
+   - Verifica se a coleção (Array) está vazia:
+     - `true` → se estiver vazia
+     - `false` → se tiver elementos
+ - **Uso do operador `!`**
+   - Inverte o valor booleano
+   - Retorna:
+     - `true` → existem tags abertas
+     - `false` → todas as tags foram fechadas
+
+### `Código final (completo)`
+
+No fim, nós vamos ter o seguinte código:
+
+[HTMLParserState.java](app/src/main/java/org/example/HTMLParserState.java)
+```java
+package org.example;
+
+import java.util.ArrayDeque;
+import java.util.Deque;
+
+public final class HTMLParserState {
+
+    private final Deque<String> openTagsArray;
+
+    public HTMLParserState() {
+        this.openTagsArray = new ArrayDeque<>();
+    }
+
+    public void openTag(final String tagName) {
+        this.openTagsArray.push(tagName);
+    }
+
+    public String closeTag() {
+        return this.openTagsArray.pop();
+    }
+
+    public int getCurrentDepth() {
+        return this.openTagsArray.size();
+    }
+
+    public boolean hasopenTagsArray() {
+        return !this.openTagsArray.isEmpty();
+    }
+}
+```
+
+
+## 🧠 Resumo Mental
+
+Essa classe funciona como:
+
+ - 📚 **Pilha de tags HTML**;
+ - 📏 Controle de profundidade;
+ - ✅ Validação estrutural;
+ - 🔒 Estado interno protegido.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+---
+
+### Arquivo: `HTMLParserState.java`
+
+#### Introdução ao arquivo
+
+Este arquivo representa o **estado central do algoritmo** durante a análise
+do HTML.
+
+Ele guarda:
+
+* a pilha de tags abertas
+* a profundidade atual
+
+Nenhuma lógica de rede, leitura ou saída existe aqui.
+
+---
+
+```java
+package org.example;
+
+import java.util.ArrayDeque;
+import java.util.Deque;
+
+public final class HtmlParserState {
+
+    private final Deque<String> openTagsArray;
+
+    public HtmlParserState() {
+        this.openTagsArray = new ArrayDeque<>();
+    }
+
+    public void openTag(final String tagName) {
+        this.openTagsArray.push(tagName);
+    }
+
+    public String closeTag() {
+        return this.openTagsArray.pop();
+    }
+
+    public int getCurrentDepth() {
+        return this.openTagsArray.size();
+    }
+
+    public boolean hasopenTagsArray() {
+        return !this.openTagsArray.isEmpty();
+    }
+}
+```
+
+---
+
+## Lendo esse código mentalmente (como o algoritmo)
+
+Imagine o HTML:
+
+```html
+<div>
+  <span>Oi</span>
+</div>
+```
+
+Execução mental:
+
+```
+openTag("div")     → pilha: [div]
+profundidade = 1
+
+openTag("span")    → pilha: [span, div]
+profundidade = 2
+
+Texto encontrado  → profundidade atual = 2
+
+closeTag()         → remove "span"
+profundidade = 1
+
+closeTag()         → remove "div"
+profundidade = 0
+```
+
+📌 O estado **nunca perde o controle** da hierarquia.
+
+---
+
+## Por que separar isso em um arquivo próprio?
+
+Porque:
+
+* deixa o código mais legível
+* evita variáveis soltas pelo programa
+* facilita detectar HTML malformado
+* torna o algoritmo testável mentalmente
+
+👉 Em avaliação técnica, isso mostra **clareza de raciocínio**.
+
+---
+
+## Regra de ouro desta etapa
+
+> **Se você consegue pausar o algoritmo em qualquer linha do HTML e
+> perguntar “qual é a profundidade agora?”, o estado está correto.**
+
+Sem pilha → sem profundidade confiável.
+Sem profundidade → resposta errada.
+
+---
+
+Quando quiser, o próximo passo natural é:
+
+* usar esse estado na **análise linha a linha**
+* detectar **HTML malformado**
+* ou começar a **comparar profundidades de textos**
+
+Sempre mantendo esse mesmo padrão disciplinado.
+
+
+
+
 ---
 
 **Rodrigo** **L**eite da **S**ilva - **rodirgols89**
