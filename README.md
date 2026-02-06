@@ -12,6 +12,8 @@
    - [`Adicionando .editorconfig e .gitignore`](#editorconfig-gitignore)
    - [`Como iniciar um projeto (vazio) com gradle`](#gradle-init)
    - [`Adicionando Linters e Formatadores de código no Java`](#lint-formatter)
+   - [`Definindo o estado principal do algoritmo (HTMLParserState.java)`](#define-state)
+   - [`Definindo as variáveis-chave do algoritmo (DeepestTextTracker.java)`](#define-key-variables)
 <!---
 [WHITESPACE RULES]
 - 50
@@ -1584,7 +1586,7 @@ public boolean hasopenTagsArray() {
      - `true` → existem tags abertas
      - `false` → todas as tags foram fechadas
 
-### `Código final (completo)`
+### `Código Completo`
 
 No fim, nós vamos ter o seguinte código:
 
@@ -1621,8 +1623,38 @@ public final class HTMLParserState {
 }
 ```
 
+### `Lendo esse código mentalmente (como o algoritmo)`
 
-## 🧠 Resumo Mental
+Imagine o HTML:
+
+```html
+<div>
+    <span>Oi</span>
+</div>
+```
+
+Execução mental:
+
+```bash
+openTag("div")     → pilha: [div]
+profundidade = 1
+
+openTag("span")    → pilha: [span, div]
+profundidade = 2
+
+Texto encontrado  → profundidade atual = 2
+
+closeTag()         → remove "span"
+profundidade = 1
+
+closeTag()         → remove "div"
+profundidade = 0
+```
+
+> **NOTE:**  
+> 📌 O estado **nunca perde o controle** da hierarquia.
+
+### `🧠 Resumo Mental`
 
 Essa classe funciona como:
 
@@ -1680,148 +1712,264 @@ Essa classe funciona como:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ---
 
-### Arquivo: `HTMLParserState.java`
+<div id="define-key-variables"></div>
 
-#### Introdução ao arquivo
+## `Definindo as variáveis-chave do algoritmo (DeepestTextTracker.java)`
 
-Este arquivo representa o **estado central do algoritmo** durante a análise
-do HTML.
+> 🏁 Ler o HTML não é suficiente.  
+> O algoritmo precisa **lembrar do melhor resultado encontrado até agora**.
 
-Ele guarda:
+Para isso, precisamos de duas variáveis centrais que irão armazenar:
 
-* a pilha de tags abertas
-* a profundidade atual
+ - Profundidade máxima encontrada;
+ - Texto correspondente a essa profundidade.
 
-Nenhuma lógica de rede, leitura ou saída existe aqui.
+### `O que essas variáveis representam (em termos simples)`
 
----
+Imagine que você está descendo escadas em um prédio:
 
+ - Cada andar mais baixo é mais profundo.
+ - Sempre que você encontra um texto:
+   - você olha o andar atual;
+   - compara com o mais fundo que já foi (anterior);
+   - decide se troca ou mantém o campeão
+
+> **NOTE:**  
+> Essas variáveis fazem exatamente isso, só que em código.
+
+Sabendo disso, agora vamos criar uma classe **exclusivamente responsável por guardar o “melhor texto até agora”**.
+
+Este código:
+
+ - Não lê HTML;
+ - Não analisa tags;
+ - Não imprime saída.
+
+Ele apenas:
+
+ - Compara profundidades;
+ - Aplica a regra de desempate;
+ - Guarda o resultado correto.
+
+Vamos começar criando o arquivo `DeepestTextTracker.java` e definindo a classe `DeepestTextTracker{}`:
+
+[DeepestTextTracker.java](app/src/main/java/org/example/DeepestTextTracker.java)
 ```java
 package org.example;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
+public class DeepestTextTracker {
 
-public final class HtmlParserState {
+    ...
 
-    private final Deque<String> openTagsArray;
+}
+```
 
-    public HtmlParserState() {
-        this.openTagsArray = new ArrayDeque<>();
-    }
+Agora, nós vamos criar os atributos da classe `maxDepth` e `deepestText`:
 
-    public void openTag(final String tagName) {
-        this.openTagsArray.push(tagName);
-    }
+[DeepestTextTracker.java](app/src/main/java/org/example/DeepestTextTracker.java)
+```java
+public class DeepestTextTracker {
 
-    public String closeTag() {
-        return this.openTagsArray.pop();
-    }
+    private int maxDepth;
+    private String deepestText;
 
-    public int getCurrentDepth() {
-        return this.openTagsArray.size();
-    }
+}
+```
 
-    public boolean hasopenTagsArray() {
-        return !this.openTagsArray.isEmpty();
+ - `maxDepth`
+   - Armazena a maior profundidade já encontrada;
+   - Tipo *"int"*;
+   - Usado como referência para comparações.
+ - `deepestText`
+   - Armazena o texto associado à maior profundidade;
+   - Tipo *"String"*;
+   - Pode ser *null* se nenhum texto foi analisado ainda.
+
+Continuando, agora vamos criar um `construtor` que vai inicializar essas variáveis assim que alguém instanciar essa classe:
+
+[DeepestTextTracker.java](app/src/main/java/org/example/DeepestTextTracker.java)
+```java
+public class DeepestTextTracker {
+
+    private int maxDepth;
+    private String deepestText;
+
+    DeepestTextTracker() {
+        this.maxDepth = -1;
+        this.deepestText = null;
     }
 }
 ```
 
----
+ - `this.maxDepth = -1;`
+   - Define uma profundidade inicial inválida.
+   - Garante que qualquer profundidade real (0 ou mais) será maior.
+   - 📌 Isso facilita a primeira comparação:
+     - `if (currentDepth > this.maxDepth)`
+ - `this.deepestText = null;`
+   - Indica que ainda não existe resultado.
+   - Nenhum texto foi considerado até agora.
 
-## Lendo esse código mentalmente (como o algoritmo)
+Agora, nós vamos criar o método `considerText()` que será responsável por:
 
-Imagine o HTML:
+ - Avalia um texto recebido;
+ - Verifica se ele está em uma profundidade maior que qualquer outro já visto;
+ - Se estiver, atualiza o “recorde”
 
-```html
-<div>
-  <span>Oi</span>
-</div>
+[DeepestTextTracker.java](app/src/main/java/org/example/DeepestTextTracker.java)
+```java
+public class DeepestTextTracker {
+
+    ...
+
+    public void considerText(final String text, final int currentDepth) {
+        if (currentDepth > this.maxDepth) {
+            this.maxDepth = currentDepth;
+            this.deepestText = text;
+        }
+    }
+
+}
 ```
 
-Execução mental:
+ - `if (currentDepth > this.maxDepth)`
+   - Verifica se o valor atual (`currentDepth`) é maior que o armazenado (`this.maxDepth`).
+   - **O que retorna?**
+     - **true** - se `currentDepth` for maior que `this.maxDepth`
+     - **false** - se `currentDepth` for menor ou igual a `this.maxDepth`
+   - `this.maxDepth = currentDepth;`
+   - `this.deepestText = text;`
+     - *Se o texto atual for mais profundo:*
+       - Atualizamos o nível máximo;
+       - Salvamos o texto correspondente.
 
+**Exemplo prático**
+```bash
+considerText("A", 1)
+considerText("B", 2)
+considerText("C", 3)
 ```
-openTag("div")     → pilha: [div]
-profundidade = 1
 
-openTag("span")    → pilha: [span, div]
-profundidade = 2
-
-Texto encontrado  → profundidade atual = 2
-
-closeTag()         → remove "span"
-profundidade = 1
-
-closeTag()         → remove "div"
-profundidade = 0
+**Resultado final:**
+```bash
+maxDepth = 3
+deepestText = "C"
 ```
 
-📌 O estado **nunca perde o controle** da hierarquia.
+Continuando, agora nós vamos criar o método `hasResult()` que vai indicar se algum texto já foi registrado como resultado:
 
----
+[DeepestTextTracker.java](app/src/main/java/org/example/DeepestTextTracker.java)
+```java
+public class DeepestTextTracker {
 
-## Por que separar isso em um arquivo próprio?
+    ...
 
-Porque:
+    public boolean hasResult() {
+        return this.deepestText != null;
+    }
+}
+```
 
-* deixa o código mais legível
-* evita variáveis soltas pelo programa
-* facilita detectar HTML malformado
-* torna o algoritmo testável mentalmente
+ - `this.deepestText != null`
+   - **O que faz?**
+     - Compara referências;
+     - Verifica se o objeto existe.
+   - **O que retorna?**
+     - **true** → já existe um texto válido;
+     - **false** → nenhum texto foi considerado ainda
 
-👉 Em avaliação técnica, isso mostra **clareza de raciocínio**.
+> **NOTE:**  
+> Esse método é muito útil antes de chamar `getDeepestText()`.
 
----
+Agora, nós vamos criar o método `getDeepestText()` que apenas vai retorna o texto armazenado como mais profundo:
 
-## Regra de ouro desta etapa
+[DeepestTextTracker.java](app/src/main/java/org/example/DeepestTextTracker.java)
+```java
+public class DeepestTextTracker {
 
-> **Se você consegue pausar o algoritmo em qualquer linha do HTML e
-> perguntar “qual é a profundidade agora?”, o estado está correto.**
+    ...
 
-Sem pilha → sem profundidade confiável.
-Sem profundidade → resposta errada.
+    public String getDeepestText() {
+        return this.deepestText;
+    }
+}
+```
 
----
+Por fim, nós vamos retornar a maior profundidade registrada com o método `getMaxDepth()`:
 
-Quando quiser, o próximo passo natural é:
+[DeepestTextTracker.java](app/src/main/java/org/example/DeepestTextTracker.java)
+```java
+public class DeepestTextTracker {
 
-* usar esse estado na **análise linha a linha**
-* detectar **HTML malformado**
-* ou começar a **comparar profundidades de textos**
+    ...
 
-Sempre mantendo esse mesmo padrão disciplinado.
+    public int getMaxDepth() {
+        return this.maxDepth;
+    }
+}
+```
 
+ - **Retorno**
+   - Tipo: *int*
+   - Valor:
+     - `-1` → nenhum texto analisado
+     - `0+` → profundidade real encontrada
 
+### `Código Completo`
 
+No fim, nós vamos ter o seguinte código:
+
+[DeepestTextTracker.java](app/src/main/java/org/example/DeepestTextTracker.java)
+```java
+package org.example;
+
+public class DeepestTextTracker {
+
+    private int maxDepth;
+    private String deepestText;
+
+    DeepestTextTracker() {
+        this.maxDepth = -1;
+        this.deepestText = null;
+    }
+
+    public void considerText(final String text, final int currentDepth) {
+        if (currentDepth > this.maxDepth) {
+            this.maxDepth = currentDepth;
+            this.deepestText = text;
+        }
+    }
+
+    public boolean hasResult() {
+        return this.deepestText != null;
+    }
+
+    public String getDeepestText() {
+        return this.deepestText;
+    }
+
+    public int getMaxDepth() {
+        return this.maxDepth;
+    }
+}
+```
+
+### `🧠 Resumo Mental`
+
+Essa classe funciona como:
+
+ - 🏆 Um contador de recorde;
+ - 📏 Sempre guarda a maior profundidade;
+ - 📝 Associa essa profundidade a um texto;
+ - 🧩 Totalmente desacoplada do parser.
+
+Ela é perfeita para ser usada junto com:
+
+ - HtmlParserState;
+ - um loop de parsing;
+ - análise incremental do HTML.
 
 ---
 
