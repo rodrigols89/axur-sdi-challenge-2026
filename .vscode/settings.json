@@ -8,6 +8,8 @@
     "editor.defaultFormatter": "wx-chevalier.google-java-format",
 
     "[java]": {
-        "editor.formatOnSave": true
-    }
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "redhat.java"
+    },
+    "java.configuration.updateBuildConfiguration": "interactive"
 }
