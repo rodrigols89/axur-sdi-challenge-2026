@@ -2,13 +2,16 @@
 
 ## Conteúdo
 
- - [`Entendendo o problema (desafio)`](#und-challenge)
- - [`Entendendo o conceito de profundidade no HTML`](#und-depth-concept)
- - [`Entendendo a regra de desempate: o primeiro texto vence`](#und-rule)
- - [`Entendendo os outputs possíveis do programa`](#und-output)
- - [`Adicionando .editorconfig e .gitignore`](#editorconfig-gitignore)
- - [`Como iniciar um projeto (vazio) com gradle`](#gradle-init)
- - [`Adicionando Linters e Formatadores de código no Java`](#lint-formatter)
+ - **Teoria:**
+   - [`Entendendo o problema (desafio)`](#und-challenge)
+   - [`Entendendo o conceito de profundidade no HTML`](#und-depth-concept)
+   - [`Entendendo a regra de desempate: o primeiro texto vence`](#und-rule)
+   - [`Entendendo os outputs possíveis do programa`](#und-output)
+   - [`Dividindo o problema em blocos bem definidos`](#divide-the-problem)
+ - **Implementação:**
+   - [`Adicionando .editorconfig e .gitignore`](#editorconfig-gitignore)
+   - [`Como iniciar um projeto (vazio) com gradle`](#gradle-init)
+   - [`Adicionando Linters e Formatadores de código no Java`](#lint-formatter)
 <!---
 [WHITESPACE RULES]
 - 50
@@ -492,7 +495,7 @@ URL connection error
 
 **Exemplo visual:**
 ```bash
-java HtmlAnalyzer http://url-inexistente.com
+java HTMLDepthAnalyzer http://url-inexistente.com
 ```
 
 **OUTPUT:**
@@ -528,6 +531,203 @@ flowchart TD
     A -->|Sim| C[HTML é válido?]
     C -->|Não| D[malformed HTML]
     C -->|Sim| E[Imprimir texto mais profundo]
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+---
+
+<div id="divide-the-problem"></div>
+
+## `Dividindo o problema em blocos bem definidos`
+
+Neste passo, vamos:
+
+ - Separar o problema em etapas independentes;
+ - Entender o papel de cada etapa;
+ - Preparar a estrutura do programa para evoluir com segurança.
+
+### `Exemplo visual: o desafio como uma linha de montagem`
+
+Pense no programa como uma esteira industrial:
+
+```mermaid
+flowchart TD
+    A[URL]
+    B[Conexão]
+    C[Leitura do HTML]
+    D[Análise da estrutura]
+    E[Seleção do resultado]
+    F[Saída no console]
+
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+    E --> F
+```
+
+> **Cada bloco recebe algo, processa, e entrega para o próximo.**  
+> Nenhum bloco “pula etapas”.
+
+### `🔌 Conexão`
+
+Responsável por:
+
+ - Receber a URL;
+ - Tentar acessar o conteúdo remoto;
+ - Falhar imediatamente se não conseguir.
+
+> **NOTE:**  
+> 📌 Se este bloco falhar, **todo o resto é ignorado**.
+
+## `📖 Leitura`
+
+Responsável por:
+
+ - Ler o HTML como texto;
+ - Separar o conteúdo em linhas;
+ - Ignorar espaços e linhas vazias.
+
+> **NOTE:**  
+> 📌 Aqui **não existe lógica de profundidade** ainda.
+
+### `🧠 Análise`
+
+Responsável por:
+
+ - Interpretar cada linha;
+ - Abrir e fechar tags;
+ - Controlar profundidade;
+ - Detectar HTML malformado.
+
+> **NOTE:**  
+> 📌 Este é o bloco mais complexo, mas **não decide saída**.
+
+### `🏆 Seleção`
+
+Responsável por:
+
+ - Observar textos encontrados;
+ - Comparar profundidades;
+ - Aplicar a regra de desempate;
+ - Guardar apenas o texto vencedor.
+
+> **NOTE:**  
+> 📌 Nenhuma impressão acontece aqui.
+
+### `📤 Saída`
+
+Responsável por:
+
+ - Decidir **qual output imprimir**
+ - Respeitar a prioridade:
+   - Erro de conexão;
+   - HTML malformado;
+   - Texto final.
+ - Omprimir **uma única linha**
+
+> **NOTE:**  
+> 📌 Nada além disso pode ser impresso.
+
+### `Arquivo: HTMLDepthAnalyzer.java`
+
+Este arquivo representa o **ponto de entrada do programa** e deixa explícito, em código, **onde cada bloco do problema começa e termina**.
+
+[HTMLDepthAnalyzer.java](app/src/main/java/org/example/HTMLDepthAnalyzer.java)
+```java
+public final class HTMLDepthAnalyzer {
+
+    public static void main(final String[] args) {
+
+        /*
+         * Bloco 1: Conexão
+         * - Receber a URL
+         * - Tentar obter o HTML
+         */
+
+        /*
+         * Bloco 2: Leitura
+         * - Ler o HTML linha por linha
+         * - Normalizar as linhas
+         */
+
+        /*
+         * Bloco 3: Análise
+         * - Interpretar tags e textos
+         * - Controlar profundidade
+         * - Detectar HTML malformado
+         */
+
+        /*
+         * Bloco 4: Seleção
+         * - Comparar profundidades
+         * - Aplicar regra de desempate
+         * - Guardar o texto vencedor
+         */
+
+        /*
+         * Bloco 5: Saída
+         * - Decidir o output final
+         * - Imprimir uma única linha
+         */
+    }
+}
 ```
 
 
