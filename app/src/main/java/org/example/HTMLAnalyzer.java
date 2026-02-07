@@ -1,0 +1,58 @@
+package org.example;
+
+import java.util.List;
+
+public final class HTMLAnalyzer {
+
+    private final HTMLParserState parserState;
+    private final DeepestTextTracker textTracker;
+
+    private ExecutionResult executionResult;
+
+    public HTMLAnalyzer() {
+        this.parserState = new HTMLParserState();
+        this.textTracker = new DeepestTextTracker();
+        this.executionResult = ExecutionResult.SUCCESS;
+    }
+
+    private void processLine(final String line) {
+        /*
+         * Aqui, futuramente:
+         * - detectar abertura de tag
+         * - detectar fechamento de tag
+         * - detectar texto válido
+         * - atualizar profundidade
+         * - alimentar o DeepestTextTracker
+         */
+    }
+
+    private void finalizeAnalysis() {
+        if (this.parserState.hasopenTagsArray()) {
+            this.executionResult = ExecutionResult.MALFORMED_HTML;
+        }
+    }
+
+    public String getResultText() {
+        if (this.textTracker.hasResult()) {
+            return this.textTracker.getDeepestText();
+        }
+        return null;
+    }
+
+    public ExecutionResult getExecutionResult() {
+        return this.executionResult;
+    }
+
+    public void analyze(final List<String> lines) {
+
+        for (final String line : lines) {
+
+            this.processLine(line);
+
+            if (this.executionResult.hasPriorityOver(ExecutionResult.SUCCESS)) {
+                break;
+            }
+        }
+        this.finalizeAnalysis();
+    }
+}

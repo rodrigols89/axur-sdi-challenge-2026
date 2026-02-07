@@ -2236,6 +2236,399 @@ else
     imprime texto
 ```
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+---
+
+<div id="create-html-analyzer"></div>
+
+## `Criando a classe central de análise: HTMLAnalyzer.java`
+
+Até agora, nós criamos **componentes especializados**:
+
+ - `HTMLParserState`
+   - Controla tags abertas;
+   - Sabe a profundidade atual.
+* `DeepestTextTracker`
+   - Decide qual texto é o mais profundo.
+* `ExecutionResult`
+   - Representa o resultado final da execução;
+   - Define prioridade entre erros e sucesso.
+
+O `HtmlAnalyzer.java` é o **maestro** 🎼, ele não faz tudo sozinho, mas:
+
+ - Coordena os componentes;
+ - Controla o fluxo da análise;
+ - Decide **quando parar**;
+ - Decide **qual será o resultado final**.
+
+Vamos começar criando o arquivo `HTMLAnalyzer.java` e definindo a classe `HTMLAnalyzer{}`:
+
+[HTMLAnalyzer.java](app/src/main/java/org/example/HTMLAnalyzer.java)
+```java
+package org.example;
+
+public class HTMLAnalyzer {
+
+}
+```
+
+Continuando, agora nós vamos importar `java.util.List`:
+
+[HTMLAnalyzer.java](app/src/main/java/org/example/HTMLAnalyzer.java)
+```java
+package org.example;
+
+import java.util.List;
+
+public class HTMLAnalyzer {
+
+}
+```
+
+ - **O que é `List`?**
+   - Interface da API Java;
+   - Representa uma coleção ordenada de elementos;
+   - Permite iteração sequencial.
+
+Ótimo, agora nós vamos declarar *"referências"* para `HtmlParserState`, `DeepestTextTracker` e `ExecutionResult`:
+
+[HTMLAnalyzer.java](app/src/main/java/org/example/HTMLAnalyzer.java)
+```java
+public class HTMLAnalyzer {
+
+    private final HTMLParserState parserState;
+    private final DeepestTextTracker textTracker;
+
+    private ExecutionResult executionResult;
+
+}
+```
+
+---
+
+ - `parserState`
+   - Tipo: `HtmlParserState`
+   - Responsável por:
+     - abrir tags;
+     - fechar tags;
+     - informar profundidade;
+     - detectar HTML malformado.
+ - `textTracker`
+   - Tipo: `DeepestTextTracker`
+   - Responsável por:
+     - decidir qual texto é o mais profundo;
+     - armazenar texto + profundidade.
+ - `executionResult`
+   - Tipo: `ExecutionResult`
+   - Armazena o **resultado atual da análise**;
+   - Pode mudar durante o processamento.
+   - **Não é `final` porque:**
+     - pode sair de `SUCCESS` para `MALFORMED_HTML`, por exemplo.
+
+Ótimo, até então nós declaramos *referências*, mas nós ainda não declaramos nenhuma instância dessa classe (ou enum). Sabendo disso, vamos criar um construtor para quem instanciar essa classe automaticamente já ter instância desses objetos:
+
+[HTMLAnalyzer.java](app/src/main/java/org/example/HTMLAnalyzer.java)
+```java
+public class HTMLAnalyzer {
+
+    private final HTMLParserState parserState;
+    private final DeepestTextTracker textTracker;
+
+    private ExecutionResult executionResult;
+
+    public HTMLAnalyzer() {
+        this.parserState = new HTMLParserState();
+        this.textTracker = new DeepestTextTracker();
+        this.executionResult = ExecutionResult.SUCCESS;
+    }
+}
+```
+
+ - `new HtmlParserState()`
+   - Cria uma pilha vazia de tags;
+   - Profundidade inicial = 0.
+ - `new DeepestTextTracker()`
+   - Nenhum texto registrado;
+   - Profundidade máxima = -1
+ - `ExecutionResult.SUCCESS`
+   - Assume **otimismo inicial**;
+   - Só mudará se algo der errado;
+   - Estratégia comum:
+     - *“Comece assumindo sucesso, falhe se necessário.”*
+
+Continuando, agora vamos criar (não vamos implementar ele ainda) o método `processLine(final String line)` que vai ser **responsável por analisar uma única linha do HTML (pelo menos por vez)**.
+
+Aqui fica concentrada a lógica de:
+
+ - Detectar abertura e fechamento de tags;
+ - Identificar textos válidos;
+ - Atualizar profundidade de aninhamento;
+ - Alimentar o *DeepestTextTracker*.
+
+[HTMLAnalyzer.java](app/src/main/java/org/example/HTMLAnalyzer.java)
+```java
+public class HTMLAnalyzer {
+
+    ...
+
+    private void processLine(final String line) {
+        /*
+         * Aqui, futuramente:
+         * - detectar abertura de tag
+         * - detectar fechamento de tag
+         * - detectar texto válido
+         * - atualizar profundidade
+         * - alimentar o DeepestTextTracker
+         */
+    }
+}
+```
+
+Ótimo, sabendo que o método acima vai analisar as linhas do HTML, vamos começar a implementar o método `finalizeAnalysis()` que vai executa validações finais após todas as linhas serem processadas.
+
+> **NOTE:**  
+> Seu papel vai ser garantir que o HTML terminou em um estado consistente — por exemplo, verificando se não ficaram tags abertas — e ajustar o ExecutionResult caso encontre problemas.
+
+[HTMLAnalyzer.java](app/src/main/java/org/example/HTMLAnalyzer.java)
+```java
+public final class HTMLAnalyzer {
+
+    ...
+
+    private void finalizeAnalysis() {
+        if (this.parserState.hasopenTagsArray()) {
+            this.executionResult = ExecutionResult.MALFORMED_HTML;
+        }
+    }
+
+}
+```
+
+ - `if (this.parserState.hasopenTagsArray())`
+   - Aqui nós estamos verificando se existe alguma tag aberta.
+ - `this.executionResult = ExecutionResult.MALFORMED_HTML`
+   - Se existir alguma tag aberta, vamos modificar o nosso enum para o estado `MALFORMED_HTML`.
+   - **NOTE:** Lembrando que ele foi inicializado com o estado `SUCCESS`.
+
+Agora, nós vamos começar a implementar o método `getResultText()` que vai ser responsável por retorna o texto válido encontrado na maior profundidade do HTML, caso exista.
+
+> **NOTE:**  
+> Se nenhum texto válido tiver sido identificado durante a análise, retorna `null`.
+
+[HTMLAnalyzer.java](app/src/main/java/org/example/HTMLAnalyzer.java)
+```java
+public final class HTMLAnalyzer {
+
+    ...
+
+
+    public String getResultText() {
+        if (this.textTracker.hasResult()) {
+            return this.textTracker.getDeepestText();
+        }
+        return null;
+    }
+}
+```
+
+ - `if (this.textTracker.hasResult())`
+   - Verifica se algum texto foi registrado.
+ - `return this.textTracker.getDeepestText();`
+   - Se sim, retorna o texto mais profundo.
+ - `return null;`
+   - Se não, retorna `null`.
+
+Ótimo, outro método que nós vamos começar a implementar agora é o método `getExecutionResult()` que vai ser responsável por retorna o resultado final da execução da análise, indicando se foi bem-sucedida ou se algum erro foi detectado.
+
+[HTMLAnalyzer.java](app/src/main/java/org/example/HTMLAnalyzer.java)
+```java
+public final class HTMLAnalyzer {
+
+    ...
+
+    public ExecutionResult getExecutionResult() {
+        return this.executionResult;
+    }
+}
+```
+
+ - `ExecutionResult getExecutionResult()`
+   - Primeiro, veja que por definição esse método é do tipo `ExecutionResult`.
+   - Ou seja, deve retornar o enum `ExecutionResult`.
+ - `return this.executionResult;`
+   - Aqui nós estamos retornando o estado atual do nosso *enum* `executionResult`.
+
+Por fim, mas não menos importante, vamos começar a implementar o método `analyze(List<String> lines)` que vai ser responsável por orquestrar toda a análise do *HTML*, percorrendo o conteúdo linha por linha.
+
+Durante a execução:
+
+ - Cada linha é enviada para processamento;
+ - A análise pode ser interrompida antecipadamente se surgir um erro mais prioritário;
+ - Ao final, dispara as validações finais do HTML.
+
+> **NOTE:**  
+> Esse método vai ser o *“cérebro”* do fluxo de execução.
+
+[HTMLAnalyzer.java](app/src/main/java/org/example/HTMLAnalyzer.java)
+```java
+public final class HTMLAnalyzer {
+
+    ...
+
+
+}
+```
+
+ - **Primeiro, o que esse método recebe como argumento?**
+   - `final List<String> lines`
+   - Lista de linhas do HTML;
+   - Cada String representa uma linha
+ - `for (final String line : lines)`
+   - Itera sequencialmente sobre a lista.
+   - Tipo de loop:
+     - *"enhanced for"*
+     - simples e legível
+ - `this.processLine(line);`
+   - Chama o método `processLine()` passando a linha atual.
+ - `if (this.executionResult.hasPriorityOver(ExecutionResult.SUCCESS))`
+   - Verifica se o resultado final da análise tem prioridade sobre o estado `SUCCESS`.
+   - Ou seja, se o resultado final da análise for `MALFORMED_HTML` ou `URL_CONNECTION_ERROR`, vamos parar a execução.
+ - **Depois de iterar por todas as lines (HTML):**
+   - `this.finalizeAnalysis();`
+     - Chama o método `finalizeAnalysis()` para:
+       - Executar as validações finais do HTML.
+       - Ajusta o resultado se necessário.
+
+### `Código Completo` 
+
+No fim, nós vamos ter o seguinte código:
+
+[HTMLAnalyzer.java](app/src/main/java/org/example/HTMLAnalyzer.java)
+```java
+package org.example;
+
+import java.util.List;
+
+public final class HTMLAnalyzer {
+
+    private final HTMLParserState parserState;
+    private final DeepestTextTracker textTracker;
+
+    private ExecutionResult executionResult;
+
+    public HTMLAnalyzer() {
+        this.parserState = new HTMLParserState();
+        this.textTracker = new DeepestTextTracker();
+        this.executionResult = ExecutionResult.SUCCESS;
+    }
+
+    private void processLine(final String line) {
+        /*
+         * Aqui, futuramente:
+         * - detectar abertura de tag
+         * - detectar fechamento de tag
+         * - detectar texto válido
+         * - atualizar profundidade
+         * - alimentar o DeepestTextTracker
+         */
+    }
+
+    private void finalizeAnalysis() {
+        if (this.parserState.hasopenTagsArray()) {
+            this.executionResult = ExecutionResult.MALFORMED_HTML;
+        }
+    }
+
+    public String getResultText() {
+        if (this.textTracker.hasResult()) {
+            return this.textTracker.getDeepestText();
+        }
+        return null;
+    }
+
+    public ExecutionResult getExecutionResult() {
+        return this.executionResult;
+    }
+
+    public void analyze(final List<String> lines) {
+
+        for (final String line : lines) {
+
+            this.processLine(line);
+
+            if (this.executionResult.hasPriorityOver(ExecutionResult.SUCCESS)) {
+                break;
+            }
+        }
+        this.finalizeAnalysis();
+    }
+}
+```
+
+### `🧠 Resumo Mental`
+
+Essa classe:
+
+ - 🎼 Orquestra todo o processo;
+ - 🔁 Processa linha por linha;
+ - 🛑 Para cedo quando necessário;
+ - 🔍 Valida o estado final;
+ - 📤 Expõe apenas o essencial.
+
+Ela é o **ponto central** que conecta:
+
+ - Estado do parser;
+ - Regra de profundidade;
+ - Decisão de resultado.
+
 ---
 
 **Rodrigo** **L**eite da **S**ilva - **rodirgols89**
