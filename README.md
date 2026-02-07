@@ -14,6 +14,7 @@
    - [`Adicionando Linters e Formatadores de código no Java`](#lint-formatter)
    - [`Definindo o estado principal do algoritmo (HTMLParserState.java)`](#define-state)
    - [`Definindo as variáveis-chave do algoritmo (DeepestTextTracker.java)`](#define-key-variables)
+   - [`Definindo regras de prioridade do resultado (ExecutionResult.java)`](#define-result)
 <!---
 [WHITESPACE RULES]
 - 50
@@ -1970,6 +1971,270 @@ Ela é perfeita para ser usada junto com:
  - HtmlParserState;
  - um loop de parsing;
  - análise incremental do HTML.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+---
+
+<div id="define-result"></div>
+
+## `Definindo regras de prioridade do resultado (ExecutionResult.java)`
+
+> ⚖️ Em algoritmos reais, nem sempre existe apenas um resultado possível.  
+> Por isso, precisamos definir **quem tem prioridade**.
+
+A regra é clara:
+
+> **Erro sempre tem prioridade sobre sucesso.**
+
+Ou seja:
+
+ - Se qualquer erro ocorrer, **nenhum texto deve ser retornado**;
+ - Mesmo que um texto profundo tenha sido encontrado antes.
+
+### `O que isso significa, em termos simples?`
+
+No nosso algoritmo:
+
+ - Encontrar um texto profundo **não garante sucesso**;
+ - O HTML precisa ser **válido do início ao fim**;
+ - A conexão precisa funcionar.
+
+### `Exemplo visual: linha do tempo do algoritmo`
+
+```bash
+Início
+  ↓
+Conexão OK
+  ↓
+Texto profundo encontrado (profundidade 4)
+  ↓
+HTML malformado detectado
+  ↓
+FIM
+```
+
+Mesmo com um texto válido encontrado:
+
+```bash
+Resultado final → ERRO
+```
+
+### `Tipos de estado final possíveis`
+
+Ao final da execução, o programa pode estar em **um** desses estados:
+
+```bash
+[ ERRO DE CONEXÃO ]  ← prioridade máxima
+[ HTML MALFORMADO ]
+[ TEXTO ENCONTRADO ]
+[ NADA ENCONTRADO ]
+```
+
+> **NOTE:**  
+> A prioridade sempre segue essa ordem.
+
+Partindo para a implementação, vamos começar criando o arquivo `ExecutionResult.java` e definindo um `enum` chamado `ExecutionResult{}`:
+
+[ExecutionResult.java](app/src/main/java/org/example/ExecutionResult.java)
+```java
+package org.example;
+
+public enum ExecutionResult {
+
+}
+```
+
+ - **O que é um `enum`?**
+   - `enum` é um tipo especial em Java
+   - Representa um conjunto fixo de valores
+   - Cada valor é uma instância única
+   - *📌 Ideal para:*
+     - estados
+     - resultados
+     - tipos bem definidos
+
+Agora, nós vamos adicionar os possíveis valores (estados) que esse `enum` pode ter:
+
+[ExecutionResult.java](app/src/main/java/org/example/ExecutionResult.java)
+```java
+package org.example;
+
+public enum ExecutionResult {
+
+    CONNECTION_ERROR, // ordinal = 0
+    MALFORMED_HTML,   // ordinal = 1
+    SUCCESS,          // ordinal = 2  
+    NO_TEXT_FOUND;    // ordinal = 3
+
+}
+```
+
+ - `CONNECTION_ERROR`
+   - O sistema não conseguiu acessar a URL;
+   - É o erro mais grave;
+   - Nada mais pode ser confiável após isso.
+ - `MALFORMED_HTML`
+   - A conexão funcionou;
+   - Mas o HTML está inválido ou malformado.
+   - Tags abertas sem fechar, estrutura quebrada etc.
+ - `SUCCESS`
+   - Tudo funcionou corretamente;
+   - HTML válido;
+   - Texto encontrado com sucesso.
+ - `NO_TEXT_FOUND`
+   - O HTML é válido;
+   - Mas não contém nenhum texto útil;
+     - Ex.: `<html><body></body></html>`
+   - Não é exatamente um erro técnico, mas um resultado negativo
+
+Ótimo, agora nós vamos criar um método chamado `hasPriorityOver()` que vai:
+
+ - Compara dois resultados de execução;
+ - Decidir qual deles tem maior prioridade.
+
+> **Em outras palavras:**  
+> *“Esse resultado é mais importante (mais grave) do que o outro?”*
+
+[ExecutionResult.java](app/src/main/java/org/example/ExecutionResult.java)
+```java
+public enum ExecutionResult {
+
+    ...
+
+    public boolean hasPriorityOver(final ExecutionResult other) {
+        return this.ordinal() < other.ordinal();
+    }
+
+}
+```
+
+ - `this.ordinal() < other.ordinal();`
+   - Quanto menor o ordinal, maior a prioridade;
+   - *CONNECTION_ERROR* vence todos;
+   - *MALFORMED_HTML* vence *SUCCESS* e *NO_TEXT_FOUND*;
+   - *SUCCESS* vence *NO_TEXT_FOUND*
+
+**Exemplos práticos:**
+```bash
+CONNECTION_ERROR.hasPriorityOver(SUCCESS);
+// true
+
+
+SUCCESS.hasPriorityOver(MALFORMED_HTML);
+// false
+
+NO_TEXT_FOUND.hasPriorityOver(SUCCESS);
+// false
+```
+
+> **O que esse método retorna?**
+
+ - `true` → este resultado tem prioridade maior;
+ - `false` → o outro resultado é mais importante
+
+### `Código Completo`
+
+No fim, nós vamos ter o seguinte código:
+
+[ExecutionResult.java](app/src/main/java/org/example/ExecutionResult.java)
+```java
+package org.example;
+
+public enum ExecutionResult {
+
+    CONNECTION_ERROR,
+    MALFORMED_HTML,
+    SUCCESS,
+    NO_TEXT_FOUND;
+
+    public boolean hasPriorityOver(final ExecutionResult other) {
+        return this.ordinal() < other.ordinal();
+    }
+
+}
+```
+
+⚠️ Este código:
+
+ - **não faz conexão**;
+ - **não analisa HTML**;
+ - **não imprime nada**;
+
+> **NOTE:**  
+> Ele apenas define **qual resultado tem prioridade**.
+
+### `Usando isso mentalmente no algoritmo`
+
+Durante a execução, você pode manter algo como:
+
+```java
+resultadoAtual = SUCCESS
+```
+
+Se algo der errado:
+
+```java
+resultadoAtual = MALFORMED_HTML
+```
+
+E no final:
+
+```java
+if (resultadoAtual == CONNECTION_ERROR)
+    imprime erro
+else if (resultadoAtual == MALFORMED_HTML)
+    imprime erro
+else
+    imprime texto
+```
 
 ---
 
