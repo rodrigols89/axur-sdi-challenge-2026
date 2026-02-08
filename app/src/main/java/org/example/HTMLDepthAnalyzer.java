@@ -1,38 +1,45 @@
 package org.example;
 
+import java.util.List;
+
 public final class HTMLDepthAnalyzer {
+
     public static void main(final String[] args) {
 
-        /*
-         * Bloco 1: Conexão
-         * - Receber a URL
-         * - Tentar obter o HTML
-         */
+        if (args.length == 0) {
+            System.out.println("URL connection error");
+            return;
+        }
 
-        /*
-         * Bloco 2: Leitura
-         * - Ler o HTML linha por linha
-         * - Normalizar as linhas
-         */
+        final String url = args[0];
+        final HTMLAnalyzer analyzer = new HTMLAnalyzer();
+        final List<String> lines;
 
-        /*
-         * Bloco 3: Análise
-         * - Interpretar tags e textos
-         * - Controlar profundidade
-         * - Detectar HTML malformado
-         */
+        try {
+            lines = HTMLReader.readLinesFrom(url);
+        } catch (final Exception exception) {
+            System.out.println("URL connection error");
+            return;
+        }
 
-        /*
-         * Bloco 4: Seleção
-         * - Comparar profundidades
-         * - Aplicar regra de desempate
-         * - Guardar o texto vencedor
-         */
+        analyzer.analyze(lines);
 
-        /*
-         * Bloco 5: Saída
-         * - Decidir o output final
-         * - Imprimir uma única linha
-         */
+        final ExecutionResult result = analyzer.getExecutionResult();
+
+        if (result == ExecutionResult.CONNECTION_ERROR) {
+            System.out.println("URL connection error");
+            return;
+        }
+
+        if (result == ExecutionResult.MALFORMED_HTML) {
+            System.out.println("malformed HTML");
+            return;
+        }
+
+        final String text = analyzer.getResultText();
+
+        if (text != null) {
+            System.out.println(text);
+        }
     }
 }
