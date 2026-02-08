@@ -1,9 +1,13 @@
 package org.example;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.URI;
-import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 
 public final class HTMLReader {
 
@@ -11,14 +15,36 @@ public final class HTMLReader {
         /* Utility class */
     }
 
-    public static HttpURLConnection openConnection(
+    public static List<String> readLinesFrom(
+            final String url) throws IOException {
+
+        final HttpURLConnection connection = openConnection(url);
+
+        final List<String> lines = new ArrayList<>();
+
+        try (InputStream stream = connection.getInputStream();
+                InputStreamReader reader = new InputStreamReader(
+                        stream,
+                        StandardCharsets.UTF_8);
+                BufferedReader buffered = new BufferedReader(reader)) {
+
+            String line;
+            while ((line = buffered.readLine()) != null) {
+                lines.add(line);
+            }
+        }
+
+        return lines;
+    }
+
+    private static HttpURLConnection openConnection(
             final String urlString) throws IOException {
 
-        final URI uri = URI.create(urlString);
-        final URL url = uri.toURL();
+        final java.net.URI uri = java.net.URI.create(urlString);
 
-        final HttpURLConnection connection =
-                (HttpURLConnection) url.openConnection();
+        final java.net.URL url = uri.toURL();
+
+        final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
         connection.setRequestMethod("GET");
         connection.setConnectTimeout(5_000);
@@ -26,8 +52,8 @@ public final class HTMLReader {
 
         connection.connect();
 
-        final int statusCode = connection.getResponseCode();
-        if (statusCode < 200 || statusCode >= 300) {
+        final int status = connection.getResponseCode();
+        if (status < 200 || status >= 300) {
             throw new IOException("Non-success HTTP status");
         }
 
