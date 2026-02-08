@@ -2,11 +2,13 @@ package org.example;
 
 import java.util.List;
 
+import javax.swing.text.html.HTMLDocument.HTMLReader;
+
 public final class HTMLDepthAnalyzer {
 
     public static void main(final String[] args) {
 
-        if (args.length == 0) {
+        if (args == null || args.length == 0) {
             System.out.println("URL connection error");
             return;
         }
@@ -14,6 +16,11 @@ public final class HTMLDepthAnalyzer {
         final String url = args[0];
         final HTMLAnalyzer analyzer = new HTMLAnalyzer();
         final List<String> lines;
+
+        if (url.isBlank()) {
+            System.out.println("URL connection error");
+            return;
+        }
 
         try {
             lines = HTMLReader.readLinesFrom(url);
