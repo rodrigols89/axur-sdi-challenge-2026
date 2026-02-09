@@ -18,8 +18,19 @@ public final class HTMLParserState {
         this.openTagsArray.push(tagName);
     }
 
-    public String closeTag() {
-        return this.openTagsArray.pop();
+    public boolean closeTag(final String tagName) {
+
+        if (tagName == null || tagName.isBlank()) {
+            return false;
+        }
+
+        if (this.openTagsArray.isEmpty()) {
+            return false;
+        }
+
+        final String lastOpenedTag = this.openTagsArray.pop();
+
+        return lastOpenedTag.equals(tagName);
     }
 
     public int getCurrentDepth() {
