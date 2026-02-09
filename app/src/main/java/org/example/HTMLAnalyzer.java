@@ -45,6 +45,23 @@ public final class HTMLAnalyzer {
         return true;
     }
 
+    private boolean isPureText(final String line) {
+
+        if (isOpeningTag(line)) {
+            return false;
+        }
+
+        if (isClosingTag(line)) {
+            return false;
+        }
+
+        if (line.startsWith("<") && line.endsWith(">")) {
+            return false;
+        }
+
+        return true;
+    }
+
     private void processLine(final String line) {
         if (line == null || line.isBlank()) {
             return;
