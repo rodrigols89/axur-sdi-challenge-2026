@@ -16,14 +16,9 @@ public final class HTMLAnalyzer {
     }
 
     private void processLine(final String line) {
-        /*
-         * Aqui, futuramente:
-         * - detectar abertura de tag
-         * - detectar fechamento de tag
-         * - detectar texto válido
-         * - atualizar profundidade
-         * - alimentar o DeepestTextTracker
-         */
+        if (line == null || line.isBlank()) {
+            return;
+        }
     }
 
     private void finalizeAnalysis() {
