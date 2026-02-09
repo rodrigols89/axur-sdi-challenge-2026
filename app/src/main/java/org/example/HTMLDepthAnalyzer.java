@@ -34,6 +34,7 @@ public final class HTMLDepthAnalyzer {
         try {
             lines = HTMLReader.readLinesFrom(url);
         } catch (final Exception exception) {
+            analyzer.markConnectionError();
             System.out.println("URL connection error");
             return;
         }

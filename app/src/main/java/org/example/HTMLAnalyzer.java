@@ -39,6 +39,10 @@ public final class HTMLAnalyzer {
         return null;
     }
 
+    public void markConnectionError() {
+        this.executionResult = ExecutionResult.CONNECTION_ERROR;
+    }
+
     public ExecutionResult getExecutionResult() {
         return this.executionResult;
     }
