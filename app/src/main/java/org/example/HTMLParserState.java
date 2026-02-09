@@ -33,6 +33,26 @@ public final class HTMLParserState {
         return lastOpenedTag.equals(tagName);
     }
 
+    public boolean validateAndCloseTag(final String tagName) {
+
+        if (tagName == null || tagName.isBlank()) {
+            return false;
+        }
+
+        if (this.openTagsArray.isEmpty()) {
+            return false;
+        }
+
+        final String lastOpenedTag = this.openTagsArray.peek();
+
+        if (!lastOpenedTag.equals(tagName)) {
+            return false;
+        }
+
+        this.openTagsArray.pop();
+        return true;
+    }
+
     public int getCurrentDepth() {
         return this.openTagsArray.size();
     }
