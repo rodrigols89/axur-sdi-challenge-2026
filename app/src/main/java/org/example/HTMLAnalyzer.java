@@ -9,6 +9,12 @@ public final class HTMLAnalyzer {
 
     private ExecutionResult executionResult;
 
+    public HTMLAnalyzer() {
+        this.parserState = new HTMLParserState();
+        this.textTracker = new DeepestTextTracker();
+        this.executionResult = ExecutionResult.SUCCESS;
+    }
+
     private boolean isOpeningTag(final String line) {
 
         if (!line.startsWith("<")) {
@@ -26,10 +32,17 @@ public final class HTMLAnalyzer {
         return true;
     }
 
-    public HTMLAnalyzer() {
-        this.parserState = new HTMLParserState();
-        this.textTracker = new DeepestTextTracker();
-        this.executionResult = ExecutionResult.SUCCESS;
+    private boolean isClosingTag(final String line) {
+
+        if (!line.startsWith("</")) {
+            return false;
+        }
+
+        if (!line.endsWith(">")) {
+            return false;
+        }
+
+        return true;
     }
 
     private void processLine(final String line) {
