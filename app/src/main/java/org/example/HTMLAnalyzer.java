@@ -19,6 +19,7 @@ public final class HTMLAnalyzer {
         if (line == null || line.isBlank()) {
             return;
         }
+        final String sanitizedLine = line.trim();
     }
 
     private void finalizeAnalysis() {
