@@ -9,6 +9,23 @@ public final class HTMLAnalyzer {
 
     private ExecutionResult executionResult;
 
+    private boolean isOpeningTag(final String line) {
+
+        if (!line.startsWith("<")) {
+            return false;
+        }
+
+        if (line.startsWith("</")) {
+            return false;
+        }
+
+        if (line.endsWith("/>")) {
+            return false;
+        }
+
+        return true;
+    }
+
     public HTMLAnalyzer() {
         this.parserState = new HTMLParserState();
         this.textTracker = new DeepestTextTracker();

@@ -19,13 +19,10 @@ public final class HTMLReader {
             final String url) throws IOException {
 
         final HttpURLConnection connection = openConnection(url);
-
         final List<String> lines = new ArrayList<>();
 
         try (InputStream stream = connection.getInputStream();
-                InputStreamReader reader = new InputStreamReader(
-                        stream,
-                        StandardCharsets.UTF_8);
+                InputStreamReader reader = new InputStreamReader(stream, StandardCharsets.UTF_8);
                 BufferedReader buffered = new BufferedReader(reader)) {
 
             String line;
@@ -41,7 +38,6 @@ public final class HTMLReader {
             final String urlString) throws IOException {
 
         final java.net.URI uri = java.net.URI.create(urlString);
-
         final java.net.URL url = uri.toURL();
 
         final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
