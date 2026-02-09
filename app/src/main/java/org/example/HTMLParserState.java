@@ -12,6 +12,9 @@ public final class HTMLParserState {
     }
 
     public void openTag(final String tagName) {
+        if (tagName == null || tagName.isBlank()) {
+            return;
+        }
         this.openTagsArray.push(tagName);
     }
 
