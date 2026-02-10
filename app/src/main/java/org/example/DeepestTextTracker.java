@@ -1,31 +1,36 @@
 package org.example;
 
-public class DeepestTextTracker {
+public final class DeepestTextTracker {
 
-    private int maxDepth;
+    private int deepestDepth;
     private String deepestText;
+    private boolean foundAnyText;
 
-    DeepestTextTracker() {
-        this.maxDepth = -1;
+    public DeepestTextTracker() {
+        this.deepestDepth = 0;
         this.deepestText = null;
+        this.foundAnyText = false;
     }
 
-    public void considerText(final String text, final int currentDepth) {
-        if (currentDepth > this.maxDepth) {
-            this.maxDepth = currentDepth;
-            this.deepestText = text;
+    public void track(final String text, final int depth) {
+
+        if (text == null || text.isBlank()) {
+            return;
+        }
+
+        this.foundAnyText = true;
+
+        if (depth > this.deepestDepth) {
+            this.deepestDepth = depth;
+            this.deepestText = text.trim();
         }
     }
 
-    public boolean hasResult() {
-        return this.deepestText != null;
+    public boolean hasText() {
+        return this.foundAnyText;
     }
 
     public String getDeepestText() {
         return this.deepestText;
-    }
-
-    public int getMaxDepth() {
-        return this.maxDepth;
     }
 }

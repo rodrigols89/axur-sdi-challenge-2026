@@ -3,11 +3,11 @@ package org.example;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
-public final class HTMLParserState {
+public final class HtmlParserState {
 
     private final Deque<String> openTagsArray;
 
-    public HTMLParserState() {
+    public HtmlParserState() {
         this.openTagsArray = new ArrayDeque<>();
     }
 
@@ -29,35 +29,14 @@ public final class HTMLParserState {
         }
 
         final String lastOpenedTag = this.openTagsArray.pop();
-
         return lastOpenedTag.equals(tagName);
-    }
-
-    public boolean validateAndCloseTag(final String tagName) {
-
-        if (tagName == null || tagName.isBlank()) {
-            return false;
-        }
-
-        if (this.openTagsArray.isEmpty()) {
-            return false;
-        }
-
-        final String lastOpenedTag = this.openTagsArray.peek();
-
-        if (!lastOpenedTag.equals(tagName)) {
-            return false;
-        }
-
-        this.openTagsArray.pop();
-        return true;
     }
 
     public int getCurrentDepth() {
         return this.openTagsArray.size();
     }
 
-    public boolean hasopenTagsArray() {
+    public boolean hasOpenTags() {
         return !this.openTagsArray.isEmpty();
     }
 }
