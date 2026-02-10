@@ -8,6 +8,8 @@
  - [`Entendendo o conceito de profundidade no HTML`](#und-depth-concept)
  - [`Entendendo a regra de desempate: o primeiro texto vence`](#und-rule)
  - [`Entendendo os outputs possíveis do programa`](#und-output)
+ - [`Simulando casos de teste`](#test-cases)
+ - [`Preparando os arquivos (.java) para serem enviados para o recrutador`](#preparing-the-files)
 <!---
 [WHITESPACE RULES]
 - 50
@@ -528,6 +530,452 @@ flowchart TD
     C -->|Não| D[malformed HTML]
     C -->|Sim| E[Imprimir texto mais profundo]
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+---
+
+<div id="test-cases"></div>
+
+## `Simulando casos de teste`
+
+Para simular nossos casos de testes vamos utilizar um servidor simples local com Python:
+
+```bash
+cd tests/HTML
+```
+
+> **NOTE:**  
+> Dentro da pasta `tests/HTML` nós temos vários arquivos HTML específicos para cada caso de teste.
+
+**VOCÊ DEVE ESTÁ NO DIRETÓRIO DOS HTMLs ANTES DE SUBIR O SERVIDOR LOCAL:**
+```bash
+python3 -m http.server 8000
+```
+
+### `✅ TESTE 1 — HTML válido com texto profundo`
+
+[valid_deep_text.html](tests/valid_deep_text.html)
+```html
+<html>
+    <body>
+        <div>
+            <section>
+                <p>
+                    Texto mais profundo
+                </p>
+            </section>
+        </div>
+    </body>
+</html>
+```
+
+▶️ **Executar**
+```bash
+# Gradle
+gradle run --args="http://localhost:8000/valid_deep_text.html"
+
+# Java
+java HtmlAnalyzer http://localhost:8000/valid_deep_text.html
+```
+
+✅ **Saída esperada**
+```bash
+Texto mais profundo
+```
+
+### `❌ TESTE 2 — URL válida, HTML válido, mas sem texto`
+
+[valid_no_text.html](tests/valid_no_text.html)
+```html
+<html>
+    <body>
+        <div></div>
+        <section></section>
+    </body>
+</html>
+```
+
+▶️ **Executar**
+```bash
+# Gradle
+gradle run --args="http://localhost:8000/valid_no_text.html"
+
+# Java
+java HtmlAnalyzer http://localhost:8000/valid_no_text.html
+```
+
+✅ **Saída esperada**
+```bash
+no text found
+```
+
+### `❌ TESTE 3 — HTML malformado (tag fechada fora de ordem)`
+
+[malformed_wrong_order.html](tests/malformed_wrong_order.html)
+```html
+<html>
+    <body>
+        <div>
+            <p>Texto</div>
+        </p>
+    </body>
+</html>
+```
+
+▶️ **Executar**
+```bash
+# Gradle
+gradle run --args="http://localhost:8000/malformed_wrong_order.html"
+
+# Java
+java HtmlAnalyzer http://localhost:8000/malformed_wrong_order.html
+```
+
+✅ **Saída esperada**
+```bash
+malformed HTML
+```
+
+### `❌ TESTE 4 — HTML malformado (fechamento extra)`
+
+[malformed_extra_close.html](tests/malformed_extra_close.html)
+```html
+<html>
+    <body>
+        </div>
+    </body>
+</html>
+```
+
+▶️ **Executar**
+```bash
+# Gradle
+gradle run --args="http://localhost:8000/malformed_extra_close.html"
+
+# Java
+java HtmlAnalyzer http://localhost:8000/malformed_extra_close.html
+```
+
+✅ **Saída esperada**
+```bash
+malformed HTML
+```
+
+### `❌ TESTE 5 — HTML malformado (tag não fechada)`
+
+[malformed_unclosed_tag.html](tests/malformed_unclosed_tag.html)
+```html
+<html>
+    <body>
+        <div>
+            <p>Texto</p>
+    </body>
+</html>
+```
+
+▶️ **Executar**
+```bash
+# Gradle
+gradle run --args="http://localhost:8000/malformed_unclosed_tag.html"
+
+# Java
+java HtmlAnalyzer http://localhost:8000/malformed_unclosed_tag.html
+```
+
+✅ **Saída esperada**
+```bash
+malformed HTML
+```
+
+### `❌ TESTE 6 — HTML válido com múltiplos textos (mais profundo ganha)`
+
+[valid_multiple_texts.html](tests/valid_multiple_texts.html)
+```html
+<html>
+    <body>
+        Texto raso
+        <div>
+            Texto médio
+            <section>
+                Texto profundo
+            </section>
+        </div>
+    </body>
+</html>
+```
+
+▶️ **Executar**
+```bash
+# Gradle
+gradle run --args="http://localhost:8000/valid_multiple_texts.html"
+
+# Java
+java HtmlAnalyzer http://localhost:8000/valid_multiple_texts.html
+```
+
+✅ **Saída esperada**
+```bash
+Texto profundo
+```
+
+### `❌ TESTE 7 — HTML válido com texto fora de tags`
+
+[valid_text_outside_tags.html](tests/valid_text_outside_tags.html)
+```html
+Texto fora
+<html>
+    <body>
+        <div>
+            <p>Texto dentro</p>
+        </div>
+    </body>
+</html>
+```
+
+▶️ **Executar**
+```bash
+# Gradle
+gradle run --args="http://localhost:8000/valid_text_outside_tags.html"
+
+# Java
+java HtmlAnalyzer http://localhost:8000/valid_text_outside_tags.html
+```
+
+✅ **Saída esperada**
+```bash
+Texto dentro
+```
+
+## `❌ TESTE 8 — HTML com espaços e linhas vazias`
+
+[valid_whitespace.html](tests/valid_whitespace.html)
+```html
+
+<html>
+
+    <body>
+
+        <div>
+
+            <p>
+
+                Texto com espaços
+
+            </p>
+
+        </div>
+
+    </body>
+
+</html>
+```
+
+▶️ **Executar**
+```bash
+# Gradle
+gradle run --args="http://localhost:8000/valid_whitespace.html"
+
+# Java
+java HtmlAnalyzer http://localhost:8000/valid_whitespace.html
+```
+
+✅ **Saída esperada**
+```bash
+Texto com espaços
+```
+
+## `❌ TESTE 9 — Conteúdo não HTML (simula erro semântico)`
+
+[not_html.txt](tests/not_html.txt)
+```txt
+Isso não é HTML
+Apenas texto
+Sem tags
+```
+
+▶️ **Executar**
+```bash
+# Gradle
+gradle run --args="http://localhost:8000/not_html.txt"
+
+# Java
+java HtmlAnalyzer http://localhost:8000/not_html.txt
+```
+
+✅ **Saída esperada**
+```bash
+malformed HTML
+```
+
+## `❌ TESTE 10 — Arquivo vazio`
+
+[empty.html](tests/empty.html)
+```html
+
+```
+
+▶️ **Executar**
+```bash
+# Gradle
+gradle run --args="http://localhost:8000/empty.html"
+
+# Java
+java HtmlAnalyzer http://localhost:8000/empty.html
+```
+
+✅ **Saída esperada**
+```bash
+no text found
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+---
+
+<div id="preparing-the-files"></div>
+
+## `Preparando os arquivos (.java) para serem enviados para o recrutador`
+
+Antes de enviar os arquivos (.java) para o time da `AXUR` foi movido cópias dos arquivos [DeepestTextTracker.java](app/src/main/java/org/example/DeepestTextTracker.java), [ExecutionResult.java](app/src/main/java/org/example/ExecutionResult.java), [HtmlAnalyzer.java](app/src/main/java/org/example/HtmlAnalyzer.java), [HtmlParserState.java](app/src/main/java/org/example/HtmlParserState.java), [HtmlReader.java](app/src/main/java/org/example/HtmlReader.java) para o diretório [tests/Java/](tests/Java/).
+
+Logo, em seguida foi removido os caminhos de pacotes `package org.example;` para evitar erros de complicação em um ambiente diferente do nosso.
+
+Depois, nós empacotamos todos os arquivos em um arquivo `.tar` que foi renomeado de `rodrigo_leite_da_silva.tar`:
+
+```bash
+tar -cvf rodrigo_leite_da_silva.tar *.java README.md
+```
+
+> **NOTE:**  
+> Um [README.md](tests/Java/README.md) introdutório também foi inserido no `.tar` para facilitar a compreensão dos avaliadores.
+
+### `Como os avaliadores podem usar podem extrair e compilar os códigos?`
+
+Uma abordagem seria mover o arquivo `rodrigo_leite_da_silva.tar` para o diretório `/tmp`:
+
+```bash
+cp rodrigo_leite_da_silva.tar /tmp
+```
+
+```bash
+cd /tmp
+```
+
+Agora é só extrair os arquivos `.java` e compilar:
+
+```bash
+tar -xvf rodrigo_leite_da_silva.tar
+```
+
+```bash
+javac HtmlAnalyzer.java
+```
+
+> **Como testar?**
+
+Simples, basta executar o programa:
+
+```bash
+java HtmlAnalyzer http://hiring.axreng.com/internship/example1.html
+```
+
+> **NOTE:**  
+> Aqui nós estamos utilizando a prórpia URL do exercício.
 
 ---
 
